@@ -52,57 +52,114 @@ const animateNumber = (
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 document.addEventListener("click", () => audioCtx.resume(), { once: true });
 
-async function createTrack(url) {
-    const audio = new Audio(url);
-    audio.crossOrigin = "anonymous";
+async function initAudioDecks() {
+    if (state.audioDeckA && state.audioDeckB) return;
 
-    const source = audioCtx.createMediaElementSource(audio);
-    const gain = audioCtx.createGain();
+    const createDeck = () => {
+        const audio = new Audio();
+        audio.crossOrigin = "anonymous";
 
-    source.connect(gain).connect(audioCtx.destination);
+        const source = audioCtx.createMediaElementSource(audio);
+        const gain = audioCtx.createGain();
+        source.connect(gain).connect(audioCtx.destination);
 
-    audio.addEventListener('ended', () => {
-        // Only restart if this track is still the active one
-        if (state.currentTrack?.audio === audio) {
-            audio.currentTime = 0;
-            audio.play();
-        }
-    });
+        audio.addEventListener('ended', () => {
+            if (state.currentTrack?.audio === audio) {
+                audio.currentTime = 0;
+                audio.play();
+            }
+        });
 
-    return { audio, source, gain };
-}
+        return { audio, source, gain, active: false };
+    };
 
-function fadeOut(track, duration = 1.5) {
-    const now = audioCtx.currentTime;
+    state.audioDeckA = createDeck();
+    state.audioDeckB = createDeck();
 
-    track.gain.gain.cancelScheduledValues(now);
-    track.gain.gain.setValueAtTime(track.gain.gain.value, now);
-    track.gain.gain.linearRampToValueAtTime(0, now + duration);
-
-    setTimeout(() => {
-        track.audio.pause();
-        track.audio.src = "";
-    }, duration * 1000);
-}
-
-function fadeIn(track, duration = 1.5, targetVolume = 1) {
-    const now = audioCtx.currentTime;
-
-    track.gain.gain.setValueAtTime(0, now);
-    track.gain.gain.linearRampToValueAtTime(targetVolume, now + duration);
-
-    track.audio.currentTime = 0;
-    track.audio.play();
+    await state.audioDeckA.audio.play().then(() => state.audioDeckA.audio.pause());
+    await state.audioDeckB.audio.play().then(() => state.audioDeckB.audio.pause());
 }
 
 async function crossfadeTo(url, fadeDuration = 1.5) {
-    const newTrack = await createTrack(url);
+    await initAudioDecks();
 
-    if (state.currentTrack) {
-        fadeOut(state.currentTrack, fadeDuration);
+    const nextDeck = (state.currentTrack === state.audioDeckA) ? state.audioDeckB : state.audioDeckA;
+    const oldDeck = state.currentTrack;
+
+    nextDeck.audio.src = url;
+    nextDeck.audio.currentTime = 0;
+    nextDeck.active = true;
+
+    const now = audioCtx.currentTime;
+    nextDeck.gain.gain.setValueAtTime(0, now);
+    nextDeck.gain.gain.linearRampToValueAtTime(1, now + fadeDuration);
+    nextDeck.audio.play();
+
+    if (oldDeck) {
+        oldDeck.active = false;
+        oldDeck.gain.gain.cancelScheduledValues(now);
+        oldDeck.gain.gain.setValueAtTime(oldDeck.gain.gain.value, now);
+        oldDeck.gain.gain.linearRampToValueAtTime(0, now + fadeDuration);
+        setTimeout(() => oldDeck.audio.pause(), fadeDuration * 1000);
     }
 
-    fadeIn(newTrack, fadeDuration);
-
-    state.currentTrack = newTrack;
+    state.currentTrack = nextDeck;
 }
+
+// const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+// document.addEventListener("click", () => audioCtx.resume(), { once: true });
+
+// async function createTrack(url) {
+//     const audio = new Audio(url);
+//     audio.crossOrigin = "anonymous";
+
+//     const source = audioCtx.createMediaElementSource(audio);
+//     const gain = audioCtx.createGain();
+
+//     source.connect(gain).connect(audioCtx.destination);
+
+//     audio.addEventListener('ended', () => {
+//         // Only restart if this track is still the active one
+//         if (state.currentTrack?.audio === audio) {
+//             audio.currentTime = 0;
+//             audio.play();
+//         }
+//     });
+
+//     return { audio, source, gain };
+// }
+
+// function fadeOut(track, duration = 1.5) {
+//     const now = audioCtx.currentTime;
+
+//     track.gain.gain.cancelScheduledValues(now);
+//     track.gain.gain.setValueAtTime(track.gain.gain.value, now);
+//     track.gain.gain.linearRampToValueAtTime(0, now + duration);
+
+//     setTimeout(() => {
+//         track.audio.pause();
+//         track.audio.src = "";
+//     }, duration * 1000);
+// }
+
+// function fadeIn(track, duration = 1.5, targetVolume = 1) {
+//     const now = audioCtx.currentTime;
+
+//     track.gain.gain.setValueAtTime(0, now);
+//     track.gain.gain.linearRampToValueAtTime(targetVolume, now + duration);
+
+//     track.audio.currentTime = 0;
+//     track.audio.play();
+// }
+
+// async function crossfadeTo(url, fadeDuration = 1.5) {
+//     const newTrack = await createTrack(url);
+
+//     if (state.currentTrack) {
+//         fadeOut(state.currentTrack, fadeDuration);
+//     }
+
+//     fadeIn(newTrack, fadeDuration);
+
+//     state.currentTrack = newTrack;
+// }
