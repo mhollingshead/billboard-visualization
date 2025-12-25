@@ -59,6 +59,8 @@ async function initAudioDecks() {
         const audio = new Audio();
         audio.crossOrigin = "anonymous";
 
+        audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+
         const source = audioCtx.createMediaElementSource(audio);
         const gain = audioCtx.createGain();
         source.connect(gain).connect(audioCtx.destination);
@@ -81,8 +83,6 @@ async function initAudioDecks() {
 }
 
 async function crossfadeTo(url, fadeDuration = 1.5) {
-    await initAudioDecks();
-
     const nextDeck = (state.currentTrack === state.audioDeckA) ? state.audioDeckB : state.audioDeckA;
     const oldDeck = state.currentTrack;
 
@@ -105,61 +105,3 @@ async function crossfadeTo(url, fadeDuration = 1.5) {
 
     state.currentTrack = nextDeck;
 }
-
-// const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-// document.addEventListener("click", () => audioCtx.resume(), { once: true });
-
-// async function createTrack(url) {
-//     const audio = new Audio(url);
-//     audio.crossOrigin = "anonymous";
-
-//     const source = audioCtx.createMediaElementSource(audio);
-//     const gain = audioCtx.createGain();
-
-//     source.connect(gain).connect(audioCtx.destination);
-
-//     audio.addEventListener('ended', () => {
-//         // Only restart if this track is still the active one
-//         if (state.currentTrack?.audio === audio) {
-//             audio.currentTime = 0;
-//             audio.play();
-//         }
-//     });
-
-//     return { audio, source, gain };
-// }
-
-// function fadeOut(track, duration = 1.5) {
-//     const now = audioCtx.currentTime;
-
-//     track.gain.gain.cancelScheduledValues(now);
-//     track.gain.gain.setValueAtTime(track.gain.gain.value, now);
-//     track.gain.gain.linearRampToValueAtTime(0, now + duration);
-
-//     setTimeout(() => {
-//         track.audio.pause();
-//         track.audio.src = "";
-//     }, duration * 1000);
-// }
-
-// function fadeIn(track, duration = 1.5, targetVolume = 1) {
-//     const now = audioCtx.currentTime;
-
-//     track.gain.gain.setValueAtTime(0, now);
-//     track.gain.gain.linearRampToValueAtTime(targetVolume, now + duration);
-
-//     track.audio.currentTime = 0;
-//     track.audio.play();
-// }
-
-// async function crossfadeTo(url, fadeDuration = 1.5) {
-//     const newTrack = await createTrack(url);
-
-//     if (state.currentTrack) {
-//         fadeOut(state.currentTrack, fadeDuration);
-//     }
-
-//     fadeIn(newTrack, fadeDuration);
-
-//     state.currentTrack = newTrack;
-// }

@@ -136,7 +136,9 @@ const seekWeek = (dir) => {
     playPause();
 };
 
-const init = () => {
+const init = async () => {
+    await initAudioDecks();
+
     document.body.setAttribute('data-state', 'playing');
     state.playing = true;
 
@@ -194,4 +196,3 @@ const playPause = () => {
         playPause();
     });
 })();
-
