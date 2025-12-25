@@ -397,7 +397,7 @@ main {
     left: 0;
     right: 0;
     bottom: 0;
-    background-image: url(/assets/paper.webp);
+    background-image: url(./assets/paper.webp);
     background-size: 320px;
     background-repeat: repeat;
     pointer-events: none;
