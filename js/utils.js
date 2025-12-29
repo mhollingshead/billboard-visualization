@@ -18,6 +18,7 @@ const startEl = document.querySelector('#play-pause');
 const timelineEl = document.querySelector('#timeline');
 const prevEl = document.querySelector('#prev-week');
 const nextEl = document.querySelector('#next-week');
+const nowPlayingEl = document.querySelector('#now-playing');
 
 const animateNumber = (
     el,
@@ -59,7 +60,7 @@ async function initAudioDecks() {
         const audio = new Audio();
         audio.crossOrigin = "anonymous";
 
-        audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+        audio.src = './assets/silence.mp3';
 
         const source = audioCtx.createMediaElementSource(audio);
         const gain = audioCtx.createGain();
@@ -86,7 +87,7 @@ async function crossfadeTo(url, fadeDuration = 1.5) {
     const nextDeck = (state.currentTrack === state.audioDeckA) ? state.audioDeckB : state.audioDeckA;
     const oldDeck = state.currentTrack;
 
-    nextDeck.audio.src = url;
+    nextDeck.audio.src = url || './assets/silence.mp3';
     nextDeck.audio.currentTime = 0;
     nextDeck.active = true;
 
@@ -105,3 +106,48 @@ async function crossfadeTo(url, fadeDuration = 1.5) {
 
     state.currentTrack = nextDeck;
 }
+
+(() => {
+    if (localStorage.getItem('theme')) {
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+        }
+    } else if (window.matchMedia) {
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.body.setAttribute('data-theme', 'dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.body.setAttribute('data-theme', 'dark');
+            } else {
+                document.body.setAttribute('data-theme', 'light');
+            }
+        });
+    }
+
+    setTimeout(() => {
+        document.body.classList.remove('no-transition');
+    }, 500);
+
+    document.querySelector('#toggle-theme')?.addEventListener('click', () => {
+        const currentTheme = document.body.getAttribute('data-theme');
+        
+        if (currentTheme === 'dark') {
+            document.body.setAttribute('data-theme', 'light');
+            localStorage.setItem('theme', 'light');
+        } else {
+            document.body.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+})();
+
+window.addEventListener('scroll', (e) => {
+    const scroll = document.documentElement.scrollTop;
+
+    if (scroll >= 32) {
+        document.querySelector('body').classList.add('scroll')
+    } else {
+        document.querySelector('body').classList.remove('scroll')
+    }
+});

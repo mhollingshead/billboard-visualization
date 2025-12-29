@@ -1,14 +1,15 @@
 const renderDate = () => {
     const currentDate = state.weeklyCharts[timelineEl.value];
     const date = new Date(currentDate.date);
-    dateEl.innerText = `${MONTH_NAMES[date.getMonth()].slice(0, 3)} ${date.getDate()}, ${date.getFullYear()}`.replaceAll('0', 'O');
+    dateEl.innerText = `${MONTH_NAMES[date.getMonth()].slice(0, 3)} ${date.getDate()}, ${date.getFullYear()}`;
 };
 
 const renderLabels = () => {
     const years = {};
     state.weeklyCharts.forEach((week, i) => {
         const year = new Date(week.date).getFullYear();
-        if (year % 10 === 0 && !years[year]) {
+        const month = new Date(week.date).getMonth();
+        if (year % 10 === 0 && !years[year] && month === 0) {
             years[year] = true;
             const label = document.createElement('div');
             label.className = 'label';
@@ -16,14 +17,53 @@ const renderLabels = () => {
             label.innerText = year;
             label.style.left = `${i / state.weeklyCharts.length * 100}%`;
             document.querySelector('#date-labels').appendChild(label);
-        } else if (year % 5 === 0 && !years[year]) {
+        } else if (year % 5 === 0 && !years[year] && month === 0) {
             years[year] = true;
             const line = document.createElement('div');
             line.className = 'line';
             line.style.left = `${i / state.weeklyCharts.length * 100}%`;
             document.querySelector('#date-labels').appendChild(line);
+        } else if (year % 1 === 0 && !years[year] && month === 0) {
+            years[year] = true;
+            const line = document.createElement('div');
+            line.className = 'line line--minor';
+            line.style.left = `${i / state.weeklyCharts.length * 100}%`;
+            document.querySelector('#date-labels').appendChild(line);
         }
     });
+}
+
+const renderNowPlaying = () => {
+    const currentWeek = state.weeklyCharts[state.currentWeek];
+    const currentSong = currentWeek.data[0];
+    const id = songKey(currentSong.title, currentSong.artist);
+
+    if (nowPlayingEl.querySelector(`[data-id="${encodeURIComponent(id)}"]`)) return;
+
+    const artwork = state.artwork[id];
+
+    const songEl = document.createElement('div');
+    songEl.className = 'now-playing__song';
+    songEl.setAttribute('data-week', state.currentWeek);
+    songEl.setAttribute('data-id', encodeURIComponent(id));
+
+    songEl.innerHTML = `
+        <div class="artwork" style="background-image: url(${artwork})"></div>
+        <div class="now-playing__info">
+            <div class="now-playing__title">${currentSong.title}</div>
+            <div class="now-playing__artist">${currentSong.artist}</div>
+        </div>
+    `;
+
+    nowPlayingEl.appendChild(songEl);
+
+    setTimeout(() => {
+        nowPlayingEl.querySelectorAll('.now-playing__song').forEach(songEl => {
+            if (songEl.getAttribute('data-id') !== encodeURIComponent(id)) {
+                nowPlayingEl.removeChild(songEl);
+            }
+        })
+    }, 1000);
 }
 
 const renderRow = (id, row) => {
@@ -48,7 +88,7 @@ const renderRow = (id, row) => {
         </div>
     `;
 
-    rowEl.style.top = `calc((5.25em - 2px) * ${Math.min(row.this_week - 1, MAX_ROWS)})`;
+    rowEl.style.top = `calc((5rem - 1px) * ${Math.min(row.this_week - 1, MAX_ROWS)})`;
     rowEl.style.zIndex = 100 - row.this_week;
 
     chartEl.appendChild(rowEl);
@@ -61,7 +101,7 @@ const updateRow = (id, row) => {
     rowEl.setAttribute('data-month', state.currentWeek);
     rowEl.setAttribute('data-position', row.this_week);
 
-    rowEl.style.top = `calc((5.25em - 2px) * ${Math.min(row.this_week - 1, MAX_ROWS)})`;
+    rowEl.style.top = `calc((5rem - 1px) * ${Math.min(row.this_week - 1, MAX_ROWS)})`;
     rowEl.style.zIndex = 100 - row.this_week;
 
     animateNumber(rowEl.querySelector('[data-stat="this-month"]'), row.this_week);
@@ -74,7 +114,7 @@ const updateRow = (id, row) => {
 }
 
 const renderChart = () => {
-    const rows = state.weeklyCharts[state.currentWeek].data;
+    const rows = state.weeklyCharts[state.currentWeek]?.data;
 
     rows.forEach(row => {
         const id = songKey(row.title, row.artist);
@@ -112,13 +152,17 @@ const updateAudio = () => {
     }
 };
 
+let timelineActive = false;
+
 const render = () => {
     if (!state.playing) return;
+    if (!state.weeklyCharts[state.currentWeek]) return;
 
-    timelineEl.value = state.currentWeek;
+    if (!timelineActive) timelineEl.value = state.currentWeek;
 
     renderDate();
     renderChart();
+    renderNowPlaying();
     updateAudio();
 
     state.currentWeek++;
@@ -167,11 +211,13 @@ const playPause = () => {
 };
 
 (async() => {
-    const weeklyCharts = await fetch('./data/monthly-charts.json').then(res => res.json());
+    const weeklyCharts = await fetch('./data/weekly-charts.json').then(res => res.json());
     const songPreviews = await fetch('./data/song-previews.json').then(res => res.json());
+    const artwork = await fetch('./data/artwork.json').then(res => res.json());
 
     state.weeklyCharts = weeklyCharts;
     state.songPreviews = songPreviews;
+    state.artwork = artwork;
 
     timelineEl.max = weeklyCharts.length - 1;
 
@@ -181,6 +227,9 @@ const playPause = () => {
 
     prevEl.addEventListener('click', () => seekWeek(-1));
     nextEl.addEventListener('click', () => seekWeek(1));
+
+    timelineEl.addEventListener('mousedown', () => timelineActive = true);
+    timelineEl.addEventListener('mouseup', () => timelineActive = false);
 
     timelineEl.addEventListener('input', renderDate);
 
@@ -195,4 +244,9 @@ const playPause = () => {
     
         playPause();
     });
+
+    document.body.setAttribute('data-ready', '');
+    renderDate();
+    renderChart();
+    renderNowPlaying();
 })();
