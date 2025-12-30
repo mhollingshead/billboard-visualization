@@ -179,6 +179,15 @@ header .bottom {
     -webkit-backdrop-filter: blur(8px);
 }
 
+header .top .content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    /* max-width: 1200px; */
+    margin: 0 auto;
+}
+
 [data-theme=dark] header .top,
 [data-theme=dark] header .bottom {
     background-color: rgba(var(--black), .9);
@@ -213,6 +222,15 @@ header .logo svg>* {
     background-color: rgba(var(--black), .9);
 }
 
+.control-bar .content {
+    width: 100%;
+    /* max-width: 1200px; */
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
 .now-playing {
     width: 100%;
     max-width: 3rem;
@@ -245,8 +263,8 @@ header .logo svg>* {
 }
 
 .now-playing__song .artwork {
-    width: 3rem;
-    height: 3rem;
+    width: 3.25rem;
+    height: 3.25rem;
     border-radius: 999px;
     position: relative;
     background-size: cover;
@@ -282,7 +300,15 @@ header .logo svg>* {
 @media screen and (min-width: 600px) {
     .now-playing__info {
         display: block;
-        width: calc(100% - 4.75rem);
+        width: calc(100% - 4rem);
+    }
+
+    .now-playing__label {
+        font-size: .75rem;
+        color: var(--content-secondary);
+        text-transform: uppercase;
+        margin-bottom: .25rem;
+        line-height: 1;
     }
 
     .now-playing__title,
@@ -291,17 +317,19 @@ header .logo svg>* {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        line-height: 1.25;
     }
 
     .now-playing__title {
         font-family: "Montserrat", sans-serif;
-        font-size: 1.5em;
+        font-size: 1.125rem;
         font-weight: 700;
         letter-spacing: -.033em;
         text-transform: uppercase;
     }
 
     .now-playing__artist {
+        font-size: .75rem;
         letter-spacing: -0.01em;
         text-transform: uppercase;
     }

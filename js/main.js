@@ -50,6 +50,7 @@ const renderNowPlaying = () => {
     songEl.innerHTML = `
         <div class="artwork" style="background-image: url(${artwork})"></div>
         <div class="now-playing__info">
+            <div class="now-playing__label">Now playing:</div>
             <div class="now-playing__title">${currentSong.title}</div>
             <div class="now-playing__artist">${currentSong.artist}</div>
         </div>
